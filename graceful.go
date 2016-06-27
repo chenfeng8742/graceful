@@ -286,6 +286,6 @@ func (srv *Server) shutdown(shutdown chan chan struct{}, kill chan struct{}) {
 		close(srv.stopChan)
 	}
 	// notify the iris plugins
-	srv.station.Close()
+	srv.station.CloseWithErr()
 	srv.chanLock.Unlock()
 }
