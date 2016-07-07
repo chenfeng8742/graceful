@@ -72,12 +72,11 @@ type Server struct {
 // If timeout is 0, the server never times out. It waits for all active requests to finish.
 // we don't pass an iris.RequestHandler , because we need iris.station.server to be setted in order the station.Close() to work
 func Run(addr string, timeout time.Duration, s *iris.Framework) {
-	s.HTTPServer.Config.ListeningAddr = addr
 	srv := &Server{
 		Timeout: timeout,
 		Logger:  s.Logger,
 		station: s,
-		Server:  s.NoListen(),
+		Server:  s.ListenVirtual(addr),
 	}
 	if err := srv.listenAndServe(); err != nil {
 		if opErr, ok := err.(*net.OpError); !ok || (ok && opErr.Op != "accept") {
@@ -92,12 +91,11 @@ func Run(addr string, timeout time.Duration, s *iris.Framework) {
 // Unlike Run this version will not exit the program if an error is encountered but will
 // return it instead.
 func RunWithErr(addr string, timeout time.Duration, s *iris.Framework) error {
-	s.HTTPServer.Config.ListeningAddr = addr
 	srv := &Server{
 		Timeout: timeout,
 		Logger:  s.Logger,
 		station: s,
-		Server:  s.NoListen(),
+		Server:  s.ListenVirtual(addr),
 	}
 
 	return srv.listenAndServe()
@@ -106,7 +104,7 @@ func RunWithErr(addr string, timeout time.Duration, s *iris.Framework) error {
 // ListenAndServe is equivalent to iris.Listen with graceful shutdown enabled.
 func (srv *Server) listenAndServe() error {
 	// Create the listener so we can control their lifetime
-	addr := srv.station.HTTPServer.Config.ListeningAddr
+	addr := srv.Server.Config.ListeningAddr
 	if addr == "" {
 		addr = ":http"
 	}
@@ -286,6 +284,6 @@ func (srv *Server) shutdown(shutdown chan chan struct{}, kill chan struct{}) {
 		close(srv.stopChan)
 	}
 	// notify the iris plugins
-	srv.station.CloseWithErr()
+	srv.station.Close()
 	srv.chanLock.Unlock()
 }
