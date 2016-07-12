@@ -8,9 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/iris-contrib/logger"
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/logger"
 	"golang.org/x/net/netutil"
 )
 
@@ -191,7 +190,7 @@ func (srv *Server) StopChan() <-chan struct{} {
 // DefaultLogger returns the logger used by Run, RunWithErr, ListenAndServe, ListenAndServeTLS and Serve.
 // The logger outputs to STDOUT by default.
 func DefaultLogger() *logger.Logger {
-	return logger.New(config.DefaultLogger())
+	return logger.New(logger.DefaultConfig())
 }
 
 func (srv *Server) manageConnections(add, remove chan net.Conn, shutdown chan chan struct{}, kill chan struct{}) {
