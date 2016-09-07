@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/iris-contrib/logger"
 	"github.com/kataras/iris"
 	"golang.org/x/net/netutil"
+	"log"
 )
 
 // Server wraps an iris.Server with graceful connection handling.
@@ -41,7 +41,7 @@ type Server struct {
 	NoSignalHandling bool
 
 	// Logger used to notify of errors on startup and on stop.
-	Logger *logger.Logger
+	Logger *log.Logger
 
 	// Interrupted is true if the server is handling a SIGINT or SIGTERM
 	// signal and is thus shutting down.
@@ -189,8 +189,8 @@ func (srv *Server) StopChan() <-chan struct{} {
 
 // DefaultLogger returns the logger used by Run, RunWithErr, ListenAndServe, ListenAndServeTLS and Serve.
 // The logger outputs to STDOUT by default.
-func DefaultLogger() *logger.Logger {
-	return logger.New(logger.DefaultConfig())
+func DefaultLogger() *log.Logger {
+	return log.New(os.Stdout, "", log.LstdFlags)
 }
 
 func (srv *Server) manageConnections(add, remove chan net.Conn, shutdown chan chan struct{}, kill chan struct{}) {
