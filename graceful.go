@@ -17,7 +17,6 @@ import (
 // It may be used directly in the same way as iris.Server, or may
 // be constructed with the global functions in this package.
 type Server struct {
-	*iris.Server
 	station *iris.Framework
 	// Timeout is the duration to allow outstanding requests to survive
 	// before forcefully terminating them.
@@ -75,8 +74,8 @@ func Run(addr string, timeout time.Duration, s *iris.Framework) {
 		Timeout: timeout,
 		Logger:  s.Logger,
 		station: s,
-		Server:  s.ListenVirtual(addr),
 	}
+	s.Config.VHost = addr
 	if err := srv.listenAndServe(); err != nil {
 		if opErr, ok := err.(*net.OpError); !ok || (ok && opErr.Op != "accept") {
 			srv.Logger.Fatal(err)
@@ -94,16 +93,16 @@ func RunWithErr(addr string, timeout time.Duration, s *iris.Framework) error {
 		Timeout: timeout,
 		Logger:  s.Logger,
 		station: s,
-		Server:  s.ListenVirtual(addr),
 	}
-
+	s.Config.VHost = addr
 	return srv.listenAndServe()
 }
 
 // ListenAndServe is equivalent to iris.Listen with graceful shutdown enabled.
 func (srv *Server) listenAndServe() error {
 	// Create the listener so we can control their lifetime
-	addr := srv.Server.Config.ListeningAddr
+	addr := srv.station.Config.VHost
+
 	if addr == "" {
 		addr = ":http"
 	}
@@ -140,7 +139,7 @@ func (srv *Server) serve(listener net.Listener) error {
 
 	// Serve with graceful listener.
 	// Execution blocks here until listener.Close() is called, above.
-	err := srv.Server.Serve(listener)
+	err := srv.station.Serve(listener)
 	if err != nil {
 		// If the underlying listening is closed, Serve returns an error
 		// complaining about listening on a closed socket. This is expected, so
@@ -246,7 +245,7 @@ func (srv *Server) handleInterrupt(interrupt chan os.Signal, quitting chan struc
 		}
 
 		close(quitting)
-		srv.Server.DisableKeepalive = true
+		srv.station.DisableKeepalive(true)
 		if err := listener.Close(); err != nil {
 			srv.log("[IRIS GRACEFUL ERROR]" + err.Error())
 		}
